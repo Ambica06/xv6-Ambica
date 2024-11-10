@@ -70,7 +70,6 @@ int main(int argc, char *argv[]) {
     int max_prime = 50;
     int fd[2];  // Pipe for communication
     int i;
-
     if (argc > 1) num_children = atoi(argv[1]);
     if (argc > 2) max_prime = atoi(argv[2]);
 
