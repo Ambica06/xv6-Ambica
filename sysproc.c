@@ -89,3 +89,32 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_nice(void) {
+    int pid, new_nice;
+    // Get the process ID and new nice value from arguments
+    if (argint(0, &pid) < 0 || argint(1, &new_nice) < 0) {
+        return -1;  // Return error if arguments are invalid
+    } 
+
+    // Check the range of the new nice value
+    if (new_nice < 1 || new_nice > 5) {
+        return -1;  // Return error if new_nice is out of bounds
+    }
+
+    // Find the process by PID
+    struct proc *p = find_proc_by_pid(pid);
+    if (!p) {
+        return -1;  // Return error if process with given PID is not found
+    }
+
+    // Store old nice value, update to new value
+    int old_nice = p->nice;
+    p->nice = new_nice;
+    return old_nice;  // Return old nice value
+}
+
+int sys_sched(void) {
+  scheduler();
+  return 0;
+}

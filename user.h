@@ -37,3 +37,5 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+int nice(int pid, int value);
+int sched(void);

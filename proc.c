@@ -49,6 +49,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->nice = 3;
 
   release(&ptable.lock);
 
@@ -268,45 +269,48 @@ wait(void)
   }
 }
 
-//PAGEBREAK: 42
-// Per-CPU process scheduler.
-// Each CPU calls scheduler() after setting itself up.
-// Scheduler never returns.  It loops, doing:
-//  - choose a process to run
-//  - swtch to start running that process
-//  - eventually that process transfers control
-//      via swtch back to the scheduler.
-void
-scheduler(void)
-{
-  struct proc *p;
+// Priority Scheduler
+void priority_scheduler(void) {
+    struct proc *p;
+    struct proc *high_p;
 
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
+    for(;;){
+        sti();
+        acquire(&ptable.lock);
+        high_p = 0;
 
-    // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+            if (p->state != RUNNABLE)
+                continue;
+            if (high_p == 0 || p->nice < high_p->nice) {
+                high_p = p;
+            }
+        }
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&cpu->scheduler, p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+        if (high_p) {
+            proc = high_p;
+            switchuvm(high_p);
+            high_p->state = RUNNING;
+            swtch(&cpu->scheduler, proc->context);
+            switchkvm();
+            proc = 0;
+        }
+        release(&ptable.lock);
     }
-    release(&ptable.lock);
+}
 
-  }
+void scheduler(void) __attribute__((noreturn));
+
+void scheduler(void) {
+    while (1) {
+        #if SCHEDULER == 0
+            round_robin_scheduler();
+        #elif SCHEDULER == 1
+            priority_scheduler();
+        #else
+            #error "Invalid scheduler mode"
+        #endif
+    }
 }
 
 // Enter scheduler.  Must hold only ptable.lock
@@ -482,4 +486,18 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+// In proc.c
+struct proc* find_proc_by_pid(int pid) {
+    struct proc *p;
+    acquire(&ptable.lock);  // Lock the process table to avoid race conditions
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->pid == pid && p->state != UNUSED) {
+            release(&ptable.lock);
+            return p;
+        }
+    }
+    release(&ptable.lock);  // Unlock if the process wasn't found
+    return 0;               // Return 0 if no process with the given PID is found
 }
