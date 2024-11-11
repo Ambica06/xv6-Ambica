@@ -26,5 +26,5 @@ int main(int argc, char *argv[]) {
         printf(1, "%d %d\n", pid, old_value);
     }
 
-    return 0;
+    exit();
 }
