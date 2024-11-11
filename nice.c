@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     if (old_value < 0) {
         printf(2, "Failed to change nice value for PID %d\n", pid);
     } else {
-        printf(1, "PID %d: Old nice value: %d, New nice value: %d\n", pid, old_value, new_nice_value);
+        printf(1, "%d %d\n", pid, old_value);
     }
 
     return 0;
