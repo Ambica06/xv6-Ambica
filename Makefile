@@ -175,12 +175,15 @@ UPROGS=\
 	_zombie\
 	_hello\
 	_test\
-	_nicemodified\
+	_nice\
 	_prime\
 	_test1\
 	_test2\
 	_test3\
 	_test4\
+	_test1part2\
+	_test2part2\
+	_test3part2\
 	
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
